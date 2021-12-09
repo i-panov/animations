@@ -9,15 +9,15 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     home: Scaffold(
       appBar: AppBar(title: Text('Animation')),
-      body: Container(
-          //width: MediaQuery.of(context).size.width,
+      body: Center(
+        child: Container(
+          height: 100,
+          width: 300,
           color: Colors.white,
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: AnimatedButton(label: 'Посмотреть в AR', onTap: () {
-              print('AR button tapped!');
-            }),
-          )
+          child: AnimatedButton(label: 'Посмотреть в AR', onTap: () {
+            print('AR button tapped!');
+          })
+        ),
       ),
     ),
   );
@@ -49,10 +49,10 @@ class _AnimatedButtonState extends State<AnimatedButton> with SingleTickerProvid
 
     _controller = new AnimationController(
       vsync: this,
-      duration: new Duration(seconds: 3),
+      duration: new Duration(seconds: 1),
     );
 
-    final tween = Tween<double>(begin: 10.0, end: 180.0);
+    final tween = Tween<double>(begin: 10.0, end: 250.0);
     _animation = tween.animate(_controller);
     _animation.addListener(_toggleLabel);
   }
@@ -60,12 +60,13 @@ class _AnimatedButtonState extends State<AnimatedButton> with SingleTickerProvid
   @override
   Widget build(BuildContext context) => Stack(
     children: [
-      Positioned(
-        top: 25,
-        left: 25,
+      !_animation.isDismissed
+      ? Align(
+        alignment: Alignment.centerLeft,
         child: Container(
-          width: 100 + _animation.value,
-          height: 50,
+          margin: EdgeInsets.only(left: 15),
+          width: _animation.value,
+          height: 45,
           decoration: BoxDecoration(
             color: Colors.white70,
             borderRadius: BorderRadius.circular(80),
@@ -75,18 +76,43 @@ class _AnimatedButtonState extends State<AnimatedButton> with SingleTickerProvid
             ],
           ),
           child: GestureDetector(
-            child: Center(
-              child: Text(widget.label),
+            child: Container(
+              alignment: Alignment.centerRight,
+              padding: EdgeInsets.only(right: 45),
+              child: _animation.isCompleted
+              //TODO: Анимация появления текста
+                ? Text(widget.label, style:  TextStyle(fontSize: 15))
+                : SizedBox(width: 1),
             ),
             onTap: widget.onTap,
           ),
         ),
-      ),
-      GestureDetector(
-        child: Container(
-          child: Image.asset('assets/AR_icon-24.png', width: 100, height: 100),
+      )
+      : SizedBox(width: 1),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: Stack(
+          children: [
+            GestureDetector(
+              child: Image.asset('assets/AR_icon-24.png', width: 80, height: 80),
+              onTap: () => !_animation.isCompleted ? _controller.forward() : _controller.reset(),
+            ),
+            _controller.isAnimating
+              ? Positioned(
+                top: 7,
+                left: 8,
+                child: SizedBox(
+                  height: 62,
+                  width: 62,
+                  child: CircularProgressIndicator(
+                    color: Color(0xff263351),
+                    strokeWidth: 2,
+                  ),
+                ),
+            )
+            : SizedBox(width: 1),
+          ],
         ),
-        onTap: () => !_animation.isCompleted ? _controller.forward() : _controller.reset(),
       ),
     ],
   );
