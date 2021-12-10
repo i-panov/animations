@@ -37,35 +37,38 @@ class AnimatedButton extends StatefulWidget {
 }
 
 class _AnimatedButtonState extends State<AnimatedButton> with SingleTickerProviderStateMixin {
-  bool _labelVisible = false;
-  void _toggleLabel() => setState(() => _labelVisible = !_labelVisible);
-
-  late final AnimationController _controller;
-  late final Animation<double> _animation;
+  late final AnimationController _rightShiftController;
+  late final Animation<double> _rightShift;
 
   @override
   void initState() {
     super.initState();
 
-    _controller = new AnimationController(
+    _rightShiftController = new AnimationController(
       vsync: this,
-      duration: new Duration(seconds: 1),
+      duration: Duration(seconds: 1),
     );
 
-    final tween = Tween<double>(begin: 10.0, end: 250.0);
-    _animation = tween.animate(_controller);
-    _animation.addListener(_toggleLabel);
+    _rightShift = Tween<double>(begin: 10.0, end: 250.0)
+      .animate(_rightShiftController)
+      ..addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _rightShiftController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => Stack(
     children: [
-      !_animation.isDismissed
+      !_rightShift.isDismissed
       ? Align(
         alignment: Alignment.centerLeft,
         child: Container(
           margin: EdgeInsets.only(left: 15),
-          width: _animation.value,
+          width: _rightShift.value,
           height: 45,
           decoration: BoxDecoration(
             color: Colors.white70,
@@ -79,10 +82,7 @@ class _AnimatedButtonState extends State<AnimatedButton> with SingleTickerProvid
             child: Container(
               alignment: Alignment.centerRight,
               padding: EdgeInsets.only(right: 45),
-              child: _animation.isCompleted
-              //TODO: Анимация появления текста
-                ? Text(widget.label, style:  TextStyle(fontSize: 15))
-                : SizedBox(width: 1),
+              child: _buildText(),
             ),
             onTap: widget.onTap,
           ),
@@ -95,9 +95,9 @@ class _AnimatedButtonState extends State<AnimatedButton> with SingleTickerProvid
           children: [
             GestureDetector(
               child: Image.asset('assets/AR_icon-24.png', width: 80, height: 80),
-              onTap: () => !_animation.isCompleted ? _controller.forward() : _controller.reset(),
+              onTap: () => !_rightShift.isCompleted ? _rightShiftController.forward() : _rightShiftController.reset(),
             ),
-            _controller.isAnimating
+            _rightShiftController.isAnimating
               ? Positioned(
                 top: 7,
                 left: 8,
@@ -116,4 +116,59 @@ class _AnimatedButtonState extends State<AnimatedButton> with SingleTickerProvid
       ),
     ],
   );
+
+  Widget _buildText() {
+    if (!_rightShift.isCompleted) {
+      return SizedBox(width: 1);
+    }
+
+    return FadeInText(Text(widget.label, style: TextStyle(fontSize: 15)));
+  }
+}
+
+class FadeInText extends StatefulWidget {
+  final Text text;
+
+  FadeInText(this.text);
+
+  @override
+  State<StatefulWidget> createState() => _FadeInTextState();
+}
+
+class _FadeInTextState extends State<FadeInText> with SingleTickerProviderStateMixin {
+  late final AnimationController _fadeInController;
+  late final Animation<double> _fadeIn;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _fadeInController = new AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 1),
+    );
+
+    _fadeIn = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _fadeInController,
+        curve: Interval(0.0, 0.5, curve: Curves.linear),
+      ),
+    )..addListener(() => setState(() {}));
+
+    _fadeInController.forward();
+  }
+
+  @override
+  void dispose() {
+    _fadeInController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: _fadeIn.value,
+      child: widget.text,
+    );
+  }
 }
